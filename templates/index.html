@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Système de Reconnaissance Faciale</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .video-container, .history-container {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f5f5f5;
+        }
+
+        img {
+            width: 100%;
+            border-radius: 5px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #444;
+            margin-bottom: 20px;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .status.active {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status.error {
+            background-color: #ffebee;
+            color: #c62828;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Système de Reconnaissance Faciale</h1>
+    <div class="container">
+        <div class="video-container">
+            <h2>Flux Vidéo en Direct</h2>
+            <img src="{{ url_for('video_feed') }}" alt="Flux vidéo" onerror="handleVideoError(this)">
+            <div class="status active">Système actif - Détection en cours</div>
+            <div class="status error">Erreur de caméra - Vérifiez que votre caméra est connectée et n'est pas utilisée par une autre application</div>
+        </div>
+        <div class="history-container">
+            <h2>Historique des Détections</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Heure de Détection</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detection in detections %}
+                    <tr>
+                        <td>{{ detection.name }}</td>
+                        <td>{{ detection.detection_time }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        function handleVideoError(img) {
+            img.style.display = 'none';
+            document.querySelector('.status.active').style.display = 'none';
+            document.querySelector('.status.error').style.display = 'block';
+        }
+    </script>
+    <script>
+        function fetchLatestDetections() {
+            fetch('/get_latest_detections')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('tbody');
+                    tbody.innerHTML = ''; // Clear existing rows
+                    data.forEach(detection => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `<td>${detection.name}</td><td>${new Date(detection.detection_time).toLocaleString()}</td>`;
+                        tbody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error fetching detections:', error));
+        }
+
+        setInterval(fetchLatestDetections, 1000); // Update every second
+    </script>
+</body>
+</html>
